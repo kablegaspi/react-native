@@ -27,14 +27,6 @@ class Reservation extends Component {
         this.toggleModal();
     }
 
-    resetForm() {
-        this.setState({
-            campers: 1,
-            hikeIn: false,
-            date: '',
-            showModal: false
-        });
-    }
 
     render() {
         return (
