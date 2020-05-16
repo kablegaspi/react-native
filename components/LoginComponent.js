@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
-import { View, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Image, CameraRoll } from 'react-native';
 import { Input, CheckBox, Button, Icon } from 'react-native-elements';
 import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from "expo-image-manipulator";
 import * as Permissions from 'expo-permissions';
 import { createBottomTabNavigator } from 'react-navigation';
 import { baseUrl } from '../shared/baseUrl';
@@ -142,22 +143,75 @@ class RegisterTab extends Component {
             />
         )
     }
+    /* -----request permission to write data (FOR BONUS QUESTION)
+    requestExternalStoragePermission = async () => {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            {
+              title: 'My App Storage Permission',
+              message: 'My App needs access to your storage ' +
+                'so you can save your photos',
+            },
+          );
+          return granted;
+        } catch (err) {
+          console.error('Failed to request permission ', err);
+          return null;
+        }
+      };*/
 
     getImageFromCamera = async () => {
         const cameraPermission = await Permissions.askAsync(Permissions.CAMERA);
         const cameraRollPermission = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-
-        if (cameraPermission.status === 'granted' && cameraRollPermission.status === 'granted') {
+        
+         if (cameraPermission.status === 'granted' && cameraRollPermission.status === 'granted') {
             const capturedImage = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1]
+            });
+            
+            if (!capturedImage.cancelled) {
+                console.log(capturedImage);
+                console.log(capturedImage.uri);
+                this.processImage(capturedImage.uri);
+                /*requestExternalStoragePermission();
+                CameraRoll.saveToCameraRoll('/data/user/0/com.XXX.app/img.png', 'photo'); FOR BONUS QUESTION*/ 
+                
+            }
+        }
+    }
+
+
+    getImageFromGallery = async () => {
+        const cameraRollPermission = await Permissions.askAsync(Permissions.CAMERA_ROLL);
+
+        if (cameraRollPermission.status === 'granted') {
+            const capturedImage = await ImagePicker.launchImageLibraryAsync({
                 allowsEditing: true,
                 aspect: [1, 1]
             });
             if (!capturedImage.cancelled) {
                 console.log(capturedImage);
-                this.setState({imageUrl: capturedImage.uri});
+                //this.setState({imageUrl: capturedImage.uri});
+                this.processImage(capturedImage.uri);
             }
         }
     }
+
+    processImage = async (imgUri) => {
+        const processedImage = await ImageManipulator.manipulateAsync(
+            imgUri,
+            [{ resize: {width: 400} }],
+            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+          );
+          console.log (processedImage);
+          this.setState({imageUrl: processedImage.uri});
+          
+        };
+    
+
+
 
     handleRegister() {
         console.log(JSON.stringify(this.state));
@@ -184,6 +238,10 @@ class RegisterTab extends Component {
                         <Button
                             title='Camera'
                             onPress={this.getImageFromCamera}
+                        />
+                        <Button
+                            title='Gallery'
+                            onPress={this.getImageFromGallery}
                         />
                     </View>
                     <Input
